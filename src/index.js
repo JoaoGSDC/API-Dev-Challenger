@@ -14,6 +14,11 @@ function createJson(outputJson) {
 
     function getObjJson(params) {
         return params.reduce((parameter, component, i) => {
+
+            if (headers[i] === 'class') {
+                headers[i] = 'classes';
+            }
+
             if (i > 0) {
                 if (headers[i] === headers[i - 1]) {
                     return setToArrayEqualHeader(headers, parameter, component, i);
@@ -24,7 +29,7 @@ function createJson(outputJson) {
             if (emailOrPhone === 'email' || emailOrPhone === 'phone') {
                 const addresses = headers[i].split(' ');
 
-                let address = component.replace(':', '').replace('(', '').replace(')', '').replace(' ', '');
+                let address = component.replace(':', '').replace('(', '').replace(')', '').replace('*').replace('+').replace(' ', '');
                 const isEmail = address.split('@').length === 2;
                 const isPhoneNumber = !isNaN(address);
 
@@ -37,6 +42,7 @@ function createJson(outputJson) {
                 if ((isEmail && emailOrPhone === 'phone') || (isPhoneNumber && emailOrPhone === 'email')) {
                     address = '';
                 }
+
                 let arr = address.split('/');
 
                 if (!isEmail && !isPhoneNumber) {
@@ -99,7 +105,7 @@ function createJson(outputJson) {
             let j = i + 1;
 
             if (out[i].eid === out[j].eid) {
-                out[i].class.push(...out[j].class);
+                out[i].classes.push(...out[j].classes);
                 out[i].addresses.push(...out[j].addresses);
 
                 if (!out[i].invisible && out[j].invisible) {
