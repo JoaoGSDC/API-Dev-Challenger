@@ -25,39 +25,40 @@ function createJson(outputJson) {
                 }
             }
 
+            let componentClean = component.replace(':', '').replace('(', '').replace(')', '').replace('*').replace('+').replace(' ', '');
+            const isEmail = checkIsEmailValid(componentClean);
+            const isPhoneNumber = !isNaN(componentClean) && componentClean.split('').length > 9 || componentClean.split('').length < 12 || (componentClean.split('').length === 11 && componentClean.split('').length[2] == 9);
+
             const emailOrPhone = headers[i].split(' ')[0];
             if (emailOrPhone === 'email' || emailOrPhone === 'phone') {
                 const addresses = headers[i].split(' ');
 
-                let address = component.replace(':', '').replace('(', '').replace(')', '').replace('*').replace('+').replace(' ', '');
-                const isEmail = address.split('@').length === 2;
-                const isPhoneNumber = !isNaN(address);
 
                 if (emailOrPhone === 'phone') {
-                    const phoneNumber = address.split('')
+                    const phoneNumber = componentClean.split('');
                     const sizePhoneNumber = phoneNumber.length;
-                    address = sizePhoneNumber < 10 || sizePhoneNumber > 11 || (sizePhoneNumber === 10 && phoneNumber[2] == 9) ? '' : `55${address}`;
+                    componentClean = sizePhoneNumber < 10 || sizePhoneNumber > 11 || (sizePhoneNumber === 10 && phoneNumber[2] == 9) ? '' : `55${componentClean}`;
                 }
 
                 if ((isEmail && emailOrPhone === 'phone') || (isPhoneNumber && emailOrPhone === 'email')) {
-                    address = '';
+                    componentClean = '';
                 }
 
-                let arr = address.split('/');
+                let arr = componentClean.split('/');
 
                 if (!isEmail && !isPhoneNumber) {
-                    if (!(address.split('@').length > 1)) {
-                        address = address.replace(address, '');
+                    if (!(componentClean.split('@').length > 1)) {
+                        componentClean = componentClean.replace(componentClean, '');
                     }
                 }
 
-                if (address == '' || address == ' ') {
+                if (componentClean == '' || componentClean == ' ') {
                     return parameter;
                 }
 
                 const tags = addresses.splice(1).map(address => address = address.split(',').join(''));
 
-                let oAddress = { type: emailOrPhone, tags, address };
+                let oAddress = { type: emailOrPhone, tags, address: componentClean };
 
                 if (arr.length > 1) {
                     arr.forEach(a => {
@@ -132,5 +133,10 @@ function createJson(outputJson) {
 
     function setBooleanValueToHeader(component) {
         return component == 1 || component === 'yes' ? true : false;
+    }
+
+    function checkIsEmailValid(text) {
+        const validator = /(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))/;
+        return validator.test(text);
     }
 }
