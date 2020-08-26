@@ -1,4 +1,5 @@
 const fs = require('fs');
+const pluralize = require('pluralize')
 const csvToJson = require('csvtojson');
 
 csvToJson({ noheader: true, output: 'csv' })
@@ -8,15 +9,14 @@ csvToJson({ noheader: true, output: 'csv' })
 
 function createJson(outputJson) {
     var headers = outputJson[0];
-    var params = outputJson.splice(1);
-
-    let arrayAddresses = [];
+    var paramsOfJson = outputJson.splice(1);
 
     function getObjJson(params) {
         return params.reduce((parameter, component, i) => {
 
-            if (headers[i] === 'class') {
-                headers[i] = 'classes';
+            if (headers[i] === headers[i + 1]) {
+                headers[i] = pluralize(headers[i]);
+                headers[i + 1] = headers[i];
             }
 
             if (i > 0) {
@@ -26,18 +26,25 @@ function createJson(outputJson) {
             }
 
             let componentClean = component.replace(':', '').replace('(', '').replace(')', '').replace('*').replace('+').replace(' ', '');
+
             const isEmail = checkIsEmailValid(componentClean);
-            const isPhoneNumber = !isNaN(componentClean) && componentClean.split('').length > 9 || componentClean.split('').length < 12 || (componentClean.split('').length === 11 && componentClean.split('').length[2] == 9);
+            const isPhoneNumber = checkIsPhoneValid(componentClean);
 
-            const emailOrPhone = headers[i].split(' ')[0];
+            let emailOrPhone = '';
+
+            if (headers[i].split(' ').includes('email') || headers[i].split(' ').includes('e-mail') || headers[i].split(' ').includes('mail')) {
+                emailOrPhone = 'email';
+            }
+
+            if (headers[i].split(' ').includes('phone') || headers[i].split(' ').includes('tel') || headers[i].split(' ').includes('call') || headers[i].split(' ').includes('cell')) {
+                emailOrPhone = 'phone';
+            }
+
             if (emailOrPhone === 'email' || emailOrPhone === 'phone') {
-                const addresses = headers[i].split(' ');
-
+                const oHeader = headers[i].split(' ');
 
                 if (emailOrPhone === 'phone') {
-                    const phoneNumber = componentClean.split('');
-                    const sizePhoneNumber = phoneNumber.length;
-                    componentClean = sizePhoneNumber < 10 || sizePhoneNumber > 11 || (sizePhoneNumber === 10 && phoneNumber[2] == 9) ? '' : `55${componentClean}`;
+                    componentClean = !isPhoneNumber ? '' : `55${componentClean}`;
                 }
 
                 if ((isEmail && emailOrPhone === 'phone') || (isPhoneNumber && emailOrPhone === 'email')) {
@@ -47,16 +54,14 @@ function createJson(outputJson) {
                 let arr = componentClean.split('/');
 
                 if (!isEmail && !isPhoneNumber) {
-                    if (!(componentClean.split('@').length > 1)) {
-                        componentClean = componentClean.replace(componentClean, '');
-                    }
+                    componentClean = componentClean.replace(componentClean, '');
                 }
 
                 if (componentClean == '' || componentClean == ' ') {
                     return parameter;
                 }
 
-                const tags = addresses.splice(1).map(address => address = address.split(',').join(''));
+                const tags = oHeader.splice(1).map(address => address = address.split(',').join(''));
 
                 let oAddress = { type: emailOrPhone, tags, address: componentClean };
 
@@ -88,7 +93,7 @@ function createJson(outputJson) {
         }, {});
     }
 
-    var out = params.map(getObjJson);
+    var out = paramsOfJson.map(getObjJson);
 
     unifyDataByEid();
 
@@ -138,5 +143,9 @@ function createJson(outputJson) {
     function checkIsEmailValid(text) {
         const validator = /(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))/;
         return validator.test(text);
+    }
+
+    function checkIsPhoneValid(item) {
+        return !isNaN(item) && ((item.split('').length === 10 && item.split('')[2] != 9) || (item.split('').length === 11 && item.split('')[2] == 9));
     }
 }
